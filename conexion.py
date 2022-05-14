@@ -184,7 +184,7 @@ async def guardarHeartRate():
     while True:
         putHeartRateFirebase(getHeartRate())
         print("hearRate")
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)
 
 async def guardarInfo():
     while True:
