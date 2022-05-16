@@ -173,6 +173,25 @@ def putHeartRateFirebase(obj):
     except:
         return False
 
+def putTotalCalories():
+    today = date.today()
+    rute = '/band/activity/'+today.strftime('%Y/%m/%d')+'/'
+    try:
+        total_calories = firebase.get('/band/info/Calories','')
+        firebase.put(rute,'Total_Calories',total_calories)
+        return True
+    except:
+        return False
+
+def putConnected(obj:bool):
+    rute = '/band/'
+    try:
+        firebase.put(rute,'Connected',obj)
+        return True
+    except:
+        return False
+
+
 
 ###############################METODOS ASYNCRONOS##################################
 #Metodos que asincronos que suben los datos de la pulsera a firebase
@@ -258,24 +277,30 @@ if __name__ == "__main__":
                 band = miband(MAC_ADDR, debug=True)
                 success = True
 
-            guardarBandInfo()#lo primero que hace nada mas conectarse es guardar la info de la pulsera
+            putConnected(True)#lo primero que hace nada mas conectarse es guardar si está conectada
+            guardarBandInfo()#y guardar la info de la pulsera
 
             t = Temporizador('23:00:00',1,getActivityLogs)
-            t.start() 
-            t1 = ThreadPool(processes=1) 
-            async_result = t1.apply_async(ejecutar)
+            t.start()
+            t2 = Temporizador('23:59:00',1,putTotalCalories)
+            t2.start() 
+            t3 = ThreadPool(processes=1) 
+            async_result = t3.apply_async(ejecutar)
             return_val = async_result.get()
             
             #se ejecutan los hilos y si se desconecta se vuelve a lanzar el bucle para que se quede escuchando
             if(return_val == False):
                 success = False
                 print("Desconectado")
+                putConnected(False)
             
         except BTLEDisconnectError:
+            putConnected(False)
             print('Connection to the MIBand failed. Trying out again in 3 seconds')
             time.sleep(3)
             continue
         except KeyboardInterrupt:
+            putConnected(False)
             print("\nExit.")
             exit()
     
