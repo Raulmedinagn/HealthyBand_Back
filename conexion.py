@@ -293,6 +293,8 @@ if __name__ == "__main__":
                 success = False
                 print("Desconectado")
                 putConnected(False)
+            else:
+                putConnected(True)
             
         except BTLEDisconnectError:
             putConnected(False)
@@ -303,7 +305,3 @@ if __name__ == "__main__":
             putConnected(False)
             print("\nExit.")
             exit()
-    
-    
-    
-    
