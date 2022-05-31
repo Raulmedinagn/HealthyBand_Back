@@ -136,6 +136,8 @@ def get_activity_logs():
         band.waitForNotifications(0.1) """
 ####################################################################################
 
+
+
 firebase = firebase.FirebaseApplication("https://fir-proyecto-73fa0-default-rtdb.firebaseio.com/",None)
 
 ############################PUT############################
@@ -153,7 +155,7 @@ def putInfoFirebase(obj:Info):
     try:
         firebase.put('/band/info/','Steps',obj.Steps)
         firebase.put('/band/info/','Fat_burned',obj.Fat_burned)
-        firebase.put('/band/info/','Calories',obj.Calories)
+        firebase.put('/band/info/','Calories',(obj.Calories))
         firebase.put('/band/info/','Meters',obj.Meters)
         return True
     except:
@@ -168,17 +170,26 @@ def putBatteryFirebase(obj):
 
 def putHeartRateFirebase(obj):
     try:
-        firebase.put('/band/rate/','Heart_rate',obj)
-        return True
+        if(obj != 0):
+            firebase.put('/band/rate/','Heart_rate',obj)
+            return True
+        else:
+            return False
     except:
         return False
 
-def putTotalCalories():
+def putTotalInfo():
     today = date.today()
     rute = '/band/activity/'+today.strftime('%Y/%m/%d')+'/'
     try:
         total_calories = firebase.get('/band/info/Calories','')
+        total_steps = firebase.get('/band/info/Steps','')
+        total_meters = firebase.get('/band/info/Meters','')
+        total_fatburned = firebase.get('/band/info/Fat_burned','')
         firebase.put(rute,'Total_Calories',total_calories)
+        firebase.put(rute,'Total_Steps',total_steps)
+        firebase.put(rute,'Total_Meters', total_meters)
+        firebase.put(rute,'Total_Fatburned',total_fatburned)
         return True
     except:
         return False
@@ -196,7 +207,7 @@ def putConnected(obj:bool):
 ###############################METODOS ASYNCRONOS##################################
 #Metodos que asincronos que suben los datos de la pulsera a firebase
 def guardarBandInfo():
-    putHeartRateFirebase(getHeartRate())
+    putBandInfoFirebase(getBandInfo())
     print("BandInfo")
 
 async def guardarHeartRate():
@@ -236,34 +247,51 @@ def ejecutar():
         return False
 
 def getActivityLogs():
+
     today = date.today()
-    minutos_fin = 1380 #23:00 en minutos
-    hora = 0
-    min = 0
-    j = 0
-    while(j <= minutos_fin):
-        h = random.randint(60, 120)
-        s = random.randint(0, 100)
-        if(h < 80):
-            i = 0
-        elif(h > 80 and h < 95):
-            i = 1
-        elif(h > 95):
-            i = 2
-        
-        if(min >= 60):
-            hora += 1
-            min = 0
 
-        time = datetime(today.year,today.month,today.day,hora,min)
+    h = random.randint(60, 100)
+    
+    if(h < 80):
+        i = 0
+    elif(h > 80 and h < 95):
+        i = 1
+    elif(h > 95):
+        i = 2
+    
+    """ variable = random.randint(1,2)
+    variable2 = random.randint(3,4)
+    variable3 = random.randint(6,7)
+    
+    if(variable == 1):
+        total_meters = round(s*0.7)
+    else:
+        total_meters = round(s*0.8)
+
+    total_calories = round((s / 100)*variable2)
+    total_fatburned = round(total_calories/variable3) """
+    
+    time = datetime(today.year,today.month,today.day)
+    #time = datetime(today.year,mes,dia)
+
+    #rute = '/band/activity/'+today.strftime('%Y/0')+str(mes)+'/'+str(dia)+'/'+time.strftime('%H:%M')+'/'
+    #rute = '/band/activity/'+today.strftime('%Y/%m/%d')+'/'+time.strftime('%H:%M')+'/'
+    #rute = '/band/activity/'+today.strftime('%Y/0')+str(mes)+'/'+str(dia)+'/'
+    rute = '/band/activity/'+today.strftime('%Y/%m/%d')+'/'
+
+    firebase.put(rute,'Date',time)
+    firebase.put(rute,'Intensity',i)
+    firebase.put(rute,'Heart_rate_average',h)
+    # firebase.put(rute,'Total_Calories',total_calories)
+    # firebase.put(rute,'Total_Steps',s)
+    # firebase.put(rute,'Total_Meters', total_meters)
+    # firebase.put(rute,'Total_Fatburned',total_fatburned)
+
+
+
             
-        rute = '/band/activity/'+today.strftime('%Y/%m/%d')+'/'+time.strftime('%H:%M')+'/'
-        firebase.put(rute,'Intensity',i)
-        firebase.put(rute,'steps',s)
-        firebase.put(rute,'Heart_rate_average',h)
 
-        min+=10
-        j+=10
+
 
 ###############################INICIO DEL SCRIPT##################################
 if __name__ == "__main__":
@@ -282,7 +310,7 @@ if __name__ == "__main__":
 
             t = Temporizador('23:00:00',1,getActivityLogs)
             t.start()
-            t2 = Temporizador('23:59:00',1,putTotalCalories)
+            t2 = Temporizador('23:30:00',1,putTotalInfo)
             t2.start() 
             t3 = ThreadPool(processes=1) 
             async_result = t3.apply_async(ejecutar)
